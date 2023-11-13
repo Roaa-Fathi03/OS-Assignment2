@@ -9,15 +9,15 @@
 ## Description
 The assignment is divided into: 
 - **Router Calss** (10 marks):
-    ● list of connections and methods to occupy a connection and release a connection.
+    > list of connections and methods to occupy a connection and release a connection.
 - **Semaphore Class** (5 mark)
 - **Device Class** (10 marks)
-    ● it has name, type and three activities: connect, perform online activity and disconnect/logout.
+    > it has name, type and three activities: connect, perform online activity and disconnect/logout.
 - **Network Class** (10 marks)
    contains the method to take two inputs:
-    ● N: max number of connections a router can accept
-    ● TC: total number of devices that wish to connect).
-    ● TC lines that contain: Name of each device, and its Type.
+    - N: max number of connections a router can accept
+    - TC: total number of devices that wish to connect).
+    - TC lines that contain: Name of each device, and its Type.
 
 
 ## Work Distribution
