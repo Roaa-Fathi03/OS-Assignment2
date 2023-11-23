@@ -17,4 +17,12 @@ class Semaphore {
     public synchronized void sem_signal() {
     	//
     }
+
+    public synchronized void sem_acquire() {
+        //
+    }
+
+    public synchronized void sem_release() {
+        //
+    }
 }
