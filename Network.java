@@ -17,7 +17,7 @@ public class Network {
         List<Device> devices = new ArrayList<>();
 
         // Create and start threads for each device'
-        for (int i = 1; i <= totalDevices; i++) {
+        for (int i = 0; i < totalDevices; i++) {
         	String devname = scanner.next();
         	String deviceType = scanner.next();
         	System.out.println("Name : " + devname + "type: " + deviceType);
@@ -76,9 +76,8 @@ class Device extends Thread {
         }
     }
     public void connect() throws InterruptedException {
-        myRouter.occupy(this.name);
+        myRouter.occupy(this);
         System.out.println(this.name + " login.");
-        myRouter.getConnections().add(this.name);
     }
 
     public void performOnlineActivity() throws InterruptedException {
@@ -89,43 +88,51 @@ class Device extends Thread {
 
     public void disconnect() {
         System.out.println(this.name + " logged out.");
-        myRouter.getConnections().remove(this.name);
-        myRouter.release(this.name);
+        myRouter.release(this);
+    }
+    
+    public String getDeviceType() {
+    	return type;
+    }
+    public String getDeviceName() {
+    	return name;
     }
 }
 
 class Router {
-    private List<String> connections;
-    private List<String> waitingList;
+    private List<Device> connections;
     Semaphore mySemaphore;
 
     public Router(int nOfConnections) { // constructor function
+ 
         connections = new ArrayList<>();
         mySemaphore = new Semaphore(nOfConnections);
     }
 
-    public void occupy(String deviceName) {
+    public void occupy(Device device) {
         if (mySemaphore.getCount() >= 0) {
+        	//System.out.println("- " + deviceName + "(" +  + ") arrived");
+        	// modify this code to include deviceType in print message
         	mySemaphore.sem_wait();
-            connections.add(deviceName);
-            System.out.println("- Connection " + connections.size() + ": C" + deviceName + " Occupied");
+            connections.add(device);
+            System.out.println("- Connection " + device.getDeviceName() + " Occupied");
             return;
         } else {
-            System.out.println("- " + deviceName + " arrived and waiting");
+            System.out.println(device.getDeviceName() + " arrived and waiting");
         }
         mySemaphore.sem_wait();
         // critical section
-        connections.add(deviceName);
+        connections.add(device);
         System.out.println("Connection " +
-                connections.size() + ": C" + deviceName + " Occupied" );
+                connections.size() + ": "+ device.getDeviceName() + " Occupied" );
     }
 
-    public void release(String deviceName) {
-        connections.remove(deviceName);
+    public void release(Device device) {
+        connections.remove(device);
         mySemaphore.sem_signal();
     }
 
-    public List<String> getConnections() {
+    public List<Device> getConnections() {
         return connections;
     }
 
@@ -148,7 +155,7 @@ class Semaphore {
     // I think wait() is reserved in Java so, I used sem_wait(), then sem_signal() for consistency
 
     public synchronized void sem_wait() {
-        while (count < 0) ;
+        while (count < 0) ; // if count less than 0 full
         count--;
     }
 
