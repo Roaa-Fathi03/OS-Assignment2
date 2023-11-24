@@ -1,9 +1,23 @@
-//package Semaphores;
+package Semaphores;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
+public class Network {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("What is the number of WI-FI Connections?");
+        int maxConnections = scanner.nextInt();
+        System.out.println("What is the number of devices Clients want to connect?");
+        int totalDevices = scanner.nextInt();
+        Router router = new Router(maxConnections);
+
+        Device d = new Device("c1", "mobile", router);
+
+    }
+}
 class Device {
     private String name;
     private String type;
@@ -19,6 +33,7 @@ class Device {
         this.name = name;
         this.type = type;
         this.myRouter = router;
+        System.out.println(toString() + "arrived");
     }
 
     public String getName() {
@@ -39,7 +54,7 @@ class Device {
 
     @Override
     public String toString() {
-        return "Devices{" + "name=" + name + ", type=" + type + '}';
+        return "(" + name +  ") " +"(" + type + ") ";
     }
     public void connect(String deviceName) throws InterruptedException {
         myRouter.occupy(this.name);
@@ -60,44 +75,27 @@ class Device {
     }
 }
 
-
-public class Network {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("What is the number of WI-FI Connections?");
-        int maxConnections = scanner.nextInt();
-        System.out.println("What is the number of devices Clients want to connect?");
-        int totalDevices = scanner.nextInt();
-
-        Router router = new Router(maxConnections);
-    }
-}
-
-
-
 class Router {
-	private List<String> connections;
-	Semaphore mySemaphore;
+    private List<String> connections;
+    Semaphore mySemaphore;
 
-	public Router(int nOfConnections) { // constructor function
-		connections = new ArrayList<>();
-		mySemaphore = new Semaphore(nOfConnections);
-	}
-	
-	public void occupy(String deviceName) {
-		mySemaphore.sem_wait();
-		// critical section 
-		connections.add(deviceName);
-		System.out.println("Connection " + 
-		connections.size() + ": C" + deviceName + " Occupied" );
-		
-		
-	}
-	
-	public void release(String deviceName) {
-		connections.remove(deviceName);
-		mySemaphore.sem_signal();
-	}
+    public Router(int nOfConnections) { // constructor function
+        connections = new ArrayList<>();
+        mySemaphore = new Semaphore(nOfConnections);
+    }
+
+    public void occupy(String deviceName) {
+        mySemaphore.sem_wait();
+        // critical section
+        connections.add(deviceName);
+        System.out.println("Connection " +
+                connections.size() + ": C" + deviceName + " Occupied" );
+    }
+
+    public void release(String deviceName) {
+        connections.remove(deviceName);
+        mySemaphore.sem_signal();
+    }
 
     public List<String> getConnections() {
         return connections;
@@ -107,10 +105,10 @@ class Router {
 
 class Semaphore {
     private int count;
-    
+
     public Semaphore()
     {
-    	this(0);
+        this(0);
     }
 
     public Semaphore(int maxConnections) {
@@ -118,17 +116,15 @@ class Semaphore {
     }
 
     // NOTE:
-    // I think wait() is reserved in Java so I used sem_wait(), then sem_signal() for consistency
-    
-    public synchronized void sem_wait() {
+    // I think wait() is reserved in Java so, I used sem_wait(), then sem_signal() for consistency
 
-        if (count < 0)
-        ;
+    public synchronized void sem_wait() {
+        if (count < 0) ;
         count--;
     }
 
     public synchronized void sem_signal() {
-    	count++;
+        count++;
     }
 
 }
