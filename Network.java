@@ -1,4 +1,3 @@
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -16,11 +15,11 @@ public class Network {
         // Create a list to store devices
         List<Device> devices = new ArrayList<>();
 
-        // Create and start threads for each device'
+        // Create and start threads for each device
         for (int i = 0; i < totalDevices; i++) {
-        	String devname = scanner.next();
-        	String deviceType = scanner.next();
-        	System.out.println("Name : " + devname + "type: " + deviceType);
+            String devname = scanner.next();
+            String deviceType = scanner.next();
+            System.out.println("Name: " + devname + " Type: " + deviceType);
             Device device = new Device(devname, deviceType, router);
             devices.add(device);
         }
@@ -36,13 +35,7 @@ public class Network {
 class Device extends Thread {
     private String name;
     private String type;
-    Router myRouter;
-
-    public Device() {
-        this.name = "";
-        this.type = "";
-        this.myRouter = null;
-    }
+    private Router myRouter;
 
     public Device(String name, String type, Router router) {
         this.name = name;
@@ -50,18 +43,13 @@ class Device extends Thread {
         this.myRouter = router;
     }
 
-
     public String getType() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
     @Override
     public String toString() {
-        return "(" + name +  ") " +"(" + type + ") ";
+        return "(" + name + ") " + "(" + type + ") ";
     }
 
     @Override
@@ -70,11 +58,11 @@ class Device extends Thread {
             connect();
             performOnlineActivity();
             disconnect();
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
+
     public void connect() throws InterruptedException {
         myRouter.occupy(this);
         System.out.println(this.name + " login.");
@@ -90,60 +78,56 @@ class Device extends Thread {
         System.out.println(this.name + " logged out.");
         myRouter.release(this);
     }
-    
+
     public String getDeviceType() {
-    	return type;
+        return type;
     }
+
     public String getDeviceName() {
-    	return name;
+        return name;
     }
 }
 
 class Router {
     private List<Device> connections;
-    Semaphore mySemaphore;
+    private Semaphore mySemaphore;
 
     public Router(int nOfConnections) { // constructor function
- 
         connections = new ArrayList<>();
         mySemaphore = new Semaphore(nOfConnections);
     }
 
-    public void occupy(Device device) {
-        if (mySemaphore.getCount() >= 0) {
-        	//System.out.println("- " + deviceName + "(" +  + ") arrived");
-        	// modify this code to include deviceType in print message
-        	mySemaphore.sem_wait();
+    public void occupy(Device device) throws InterruptedException {
+        synchronized (this) {
+            while (connections.size() >= mySemaphore.getCount()) {
+                System.out.println(device.getDeviceName() + " (" + device.getDeviceType() + ") arrived and waiting");
+                wait(); // Wait until a connection is released
+            }
+
             connections.add(device);
-            System.out.println("- Connection " + device.getDeviceName() + " Occupied");
-            return;
-        } else {
-            System.out.println(device.getDeviceName() + " arrived and waiting");
+            System.out.println(device.toString() + " arrived");
+            System.out.println("- Connection " + device.getDeviceName() + " (" + device.getDeviceType() + ") Occupied");
         }
-        mySemaphore.sem_wait();
-        // critical section
-        connections.add(device);
-        System.out.println("Connection " +
-                connections.size() + ": "+ device.getDeviceName() + " Occupied" );
     }
 
     public void release(Device device) {
-        connections.remove(device);
-        mySemaphore.sem_signal();
+        synchronized (this) {
+            connections.remove(device);
+            //System.out.println(device.getDeviceName() + " logged out.");
+            mySemaphore.sem_signal();
+            notify(); // Notify waiting threads that a connection is available
+        }
     }
 
     public List<Device> getConnections() {
         return connections;
     }
-
 }
-
 
 class Semaphore {
     private int count;
 
-    public Semaphore()
-    {
+    public Semaphore() {
         this(0);
     }
 
@@ -151,19 +135,16 @@ class Semaphore {
         count = maxConnections;
     }
 
-    // NOTE:
-    // I think wait() is reserved in Java so, I used sem_wait(), then sem_signal() for consistency
-
     public synchronized void sem_wait() {
-        while (count < 0) ; // if count less than 0 full
+        while (count <= 0) ; // if count less than or equal to 0, full
         count--;
     }
 
     public synchronized void sem_signal() {
         count++;
     }
-    public int getCount() {
-    	return count;
-    }
 
+    public int getCount() {
+        return count;
+    }
 }
