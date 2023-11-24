@@ -15,11 +15,12 @@ public class Network {
         // Create a list to store devices
         List<Device> devices = new ArrayList<>();
 
-        // Create and start threads for each device
+        // Create and start threads for each device'
         for (int i = 0; i < totalDevices; i++) {
-            String devname = scanner.next();
-            String deviceType = scanner.next();
-            System.out.println("Name: " + devname + " Type: " + deviceType);
+            System.out.print("Enter device name and type (e.g., C1 mobile): ");
+        	String devname = scanner.next();
+        	String deviceType = scanner.next();
+        	System.out.println("Name : " + devname + " type: " + deviceType);
             Device device = new Device(devname, deviceType, router);
             devices.add(device);
         }
