@@ -1,4 +1,4 @@
-package Semaphores;
+//package Semaphores;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -99,31 +99,30 @@ public class Router {
 }
 
 
-package Semaphores;
-
 class Semaphore {
     private int count;
+    
+    public Semaphore()
+    {
+    	this(0);
+    }
 
     public Semaphore(int maxConnections) {
-        //
+        count = maxConnections;
     }
 
     // NOTE:
     // I think wait() is reserved in Java so I used sem_wait(), then sem_signal() for consistency
     
     public synchronized void sem_wait() {
-        //
+
+        if (count < 0)
+        ;
+        count--;
     }
 
     public synchronized void sem_signal() {
-    	//
+    	count++;
     }
 
-    public synchronized void sem_acquire() {
-        //
-    }
-
-    public synchronized void sem_release() {
-        //
-    }
 }
