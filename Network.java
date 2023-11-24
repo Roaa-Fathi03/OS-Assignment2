@@ -14,11 +14,22 @@ public class Network {
         int totalDevices = scanner.nextInt();
         Router router = new Router(maxConnections);
 
-        Device d = new Device("c1", "mobile", router);
+        // Create a list to store devices
+        List<Device> devices = new ArrayList<>();
+
+        // Create and start threads for each device
+        for (int i = 1; i <= totalDevices; i++) {
+            String deviceType = i % 2 == 0 ? "tablet" : "mobile"; // Alternate between tablet and mobile
+            Device device = new Device("C" + i, deviceType, router);
+            devices.add(device);
+            Thread thread = new Thread(device);
+            thread.start();
+        }
 
     }
 }
-class Device {
+
+class Device extends Thread {
     private String name;
     private String type;
     Router myRouter;
@@ -33,16 +44,21 @@ class Device {
         this.name = name;
         this.type = type;
         this.myRouter = router;
-        System.out.println(toString() + "arrived");
+//        if (myRouter.getMaxConnections() < 4)
+//            System.out.println(toString() + "arrived");
+//        else{
+//            System.out.println(toString() + "arrived and waiting");
+//
+//        }
     }
 
-    public String getName() {
-        return name;
-    }
+//    public String getName() {
+//        return name;
+//    }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+//    public void setName(String name) {
+//        this.name = name;
+//    }
 
     public String getType() {
         return type;
@@ -56,28 +72,41 @@ class Device {
     public String toString() {
         return "(" + name +  ") " +"(" + type + ") ";
     }
-    public void connect(String deviceName) throws InterruptedException {
+
+    @Override
+    public void run() {
+        try {
+            connect();
+            performOnlineActivity();
+            disconnect();
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    public void connect() throws InterruptedException {
         myRouter.occupy(this.name);
-        System.out.println(deviceName + " has connected to the router.");
-        myRouter.getConnections().add(deviceName);
+        System.out.println(this.name + " login.");
+        myRouter.getConnections().add(this.name);
     }
 
-    public void performOnlineActivity(String deviceName) throws InterruptedException {
-        System.out.println(deviceName + " is performing online activity.");
+    public void performOnlineActivity() throws InterruptedException {
+        System.out.println(this.name + " performs online activity.");
         // Simulate online activity
         Thread.sleep(new Random().nextInt(2000) + 1000);
     }
 
-    public void disconnect(String deviceName) {
-        myRouter.getConnections().remove(deviceName);
+    public void disconnect() {
+        myRouter.getConnections().remove(this.name);
         myRouter.release(this.name);
-        System.out.println(deviceName + " has disconnected from the router.");
+        System.out.println(this.name + " logged out.");
     }
 }
 
 class Router {
     private List<String> connections;
     Semaphore mySemaphore;
+//    private int maxConnections;
 
     public Router(int nOfConnections) { // constructor function
         connections = new ArrayList<>();
@@ -100,6 +129,10 @@ class Router {
     public List<String> getConnections() {
         return connections;
     }
+
+//    public int getMaxConnections() {
+//        return maxConnections;
+//    }
 }
 
 
@@ -119,7 +152,7 @@ class Semaphore {
     // I think wait() is reserved in Java so, I used sem_wait(), then sem_signal() for consistency
 
     public synchronized void sem_wait() {
-        if (count < 0) ;
+        while (count < 0) ;
         count--;
     }
 
