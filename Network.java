@@ -1,4 +1,3 @@
-package Semaphores;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,15 +16,20 @@ public class Network {
         // Create a list to store devices
         List<Device> devices = new ArrayList<>();
 
-        // Create and start threads for each device
+        // Create and start threads for each device'
         for (int i = 1; i <= totalDevices; i++) {
-            String deviceType = i % 2 == 0 ? "tablet" : "mobile"; // Alternate between tablet and mobile
-            Device device = new Device("C" + i, deviceType, router);
+        	String devname = scanner.next();
+        	String deviceType = scanner.next();
+        	System.out.println("Name : " + devname + "type: " + deviceType);
+            Device device = new Device(devname, deviceType, router);
             devices.add(device);
+        }
+
+        // Start threads for each device
+        for (Device device : devices) {
             Thread thread = new Thread(device);
             thread.start();
         }
-
     }
 }
 
@@ -44,21 +48,8 @@ class Device extends Thread {
         this.name = name;
         this.type = type;
         this.myRouter = router;
-//        if (myRouter.getMaxConnections() < 4)
-//            System.out.println(toString() + "arrived");
-//        else{
-//            System.out.println(toString() + "arrived and waiting");
-//
-//        }
     }
 
-//    public String getName() {
-//        return name;
-//    }
-
-//    public void setName(String name) {
-//        this.name = name;
-//    }
 
     public String getType() {
         return type;
@@ -97,16 +88,16 @@ class Device extends Thread {
     }
 
     public void disconnect() {
+        System.out.println(this.name + " logged out.");
         myRouter.getConnections().remove(this.name);
         myRouter.release(this.name);
-        System.out.println(this.name + " logged out.");
     }
 }
 
 class Router {
     private List<String> connections;
+    private List<String> waitingList;
     Semaphore mySemaphore;
-//    private int maxConnections;
 
     public Router(int nOfConnections) { // constructor function
         connections = new ArrayList<>();
@@ -114,6 +105,14 @@ class Router {
     }
 
     public void occupy(String deviceName) {
+        if (mySemaphore.getCount() >= 0) {
+        	mySemaphore.sem_wait();
+            connections.add(deviceName);
+            System.out.println("- Connection " + connections.size() + ": C" + deviceName + " Occupied");
+            return;
+        } else {
+            System.out.println("- " + deviceName + " arrived and waiting");
+        }
         mySemaphore.sem_wait();
         // critical section
         connections.add(deviceName);
@@ -130,9 +129,6 @@ class Router {
         return connections;
     }
 
-//    public int getMaxConnections() {
-//        return maxConnections;
-//    }
 }
 
 
@@ -158,6 +154,9 @@ class Semaphore {
 
     public synchronized void sem_signal() {
         count++;
+    }
+    public int getCount() {
+    	return count;
     }
 
 }
