@@ -1,3 +1,4 @@
+package assignment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -15,12 +16,11 @@ public class Network {
         // Create a list to store devices
         List<Device> devices = new ArrayList<>();
 
-        // Create and start threads for each device'
+        // Create and start threads for each device
         for (int i = 0; i < totalDevices; i++) {
-            System.out.print("Enter device name and type (e.g., C1 mobile): ");
-        	String devname = scanner.next();
-        	String deviceType = scanner.next();
-        	System.out.println("Name : " + devname + " type: " + deviceType);
+            String devname = scanner.next();
+            String deviceType = scanner.next();
+            System.out.println("Name: " + devname + " Type: " + deviceType);
             Device device = new Device(devname, deviceType, router);
             devices.add(device);
         }
@@ -66,17 +66,17 @@ class Device extends Thread {
 
     public void connect() throws InterruptedException {
         myRouter.occupy(this);
-        System.out.println(this.name + " login.");
+        System.out.println("Connection " + myRouter.getConnectionNumber(this) + ": " + this.name + " login.");
     }
 
     public void performOnlineActivity() throws InterruptedException {
-        System.out.println(this.name + " performs online activity.");
+        System.out.println("Connection " + myRouter.getConnectionNumber(this) + ": " + this.name + " performs online activity.");
         // Simulate online activity
         Thread.sleep(new Random().nextInt(2000) + 1000);
     }
 
     public void disconnect() {
-        System.out.println(this.name + " logged out.");
+        System.out.println("Connection " + myRouter.getConnectionNumber(this) + ": " + this.name + " logged out.");
         myRouter.release(this);
     }
 
@@ -90,37 +90,63 @@ class Device extends Thread {
 }
 
 class Router {
-    private List<Device> connections;
+    private List<Pair> connections;
     private Semaphore mySemaphore;
+    private int maxConnections;
 
-    public Router(int nOfConnections) { // constructor function
+    public Router(int maxConnections) { // constructor function
         connections = new ArrayList<>();
-        mySemaphore = new Semaphore(nOfConnections);
+        this.maxConnections = maxConnections;
+        mySemaphore = new Semaphore(maxConnections);
     }
 
     public void occupy(Device device) throws InterruptedException {
         synchronized (this) {
-            while (connections.size() >= mySemaphore.getCount()) {
+        	if(connections.size()< maxConnections) {
+                System.out.println(device.toString() + "arrived");
+        	}
+            while (connections.size() >= maxConnections) {
                 System.out.println(device.getDeviceName() + " (" + device.getDeviceType() + ") arrived and waiting");
                 wait(); // Wait until a connection is released
             }
 
-            connections.add(device);
-            System.out.println(device.toString() + " arrived");
-            System.out.println("- Connection " + device.getDeviceName() + " (" + device.getDeviceType() + ") Occupied");
+            int connectionNumber = getNextConnectionNumber();
+            connections.add(new Pair(device, connectionNumber));
+            System.out.println("Connection " + connectionNumber + ": " + device.getDeviceName() + " (" + device.getDeviceType() + ") Occupied");
         }
     }
 
     public void release(Device device) {
         synchronized (this) {
-            connections.remove(device);
-            //System.out.println(device.getDeviceName() + " logged out.");
+            int connectionNumber = getConnectionNumber(device);
+            connections.removeIf(pair -> pair.device == device);
             mySemaphore.sem_signal();
             notify(); // Notify waiting threads that a connection is available
         }
     }
 
-    public List<Device> getConnections() {
+    private int getNextConnectionNumber() {
+        int nextConnectionNumber = 1;
+        for (Pair pair : connections) {
+            if (pair.connectionNumber == nextConnectionNumber) {
+                nextConnectionNumber++;
+            } else {
+                break;
+            }
+        }
+        return nextConnectionNumber;
+    }
+
+    public int getConnectionNumber(Device device) {
+        for (Pair pair : connections) {
+            if (pair.device == device) {
+                return pair.connectionNumber;
+            }
+        }
+        return -1; // Device not found
+    }
+
+    public List<Pair> getConnections() {
         return connections;
     }
 }
@@ -147,5 +173,15 @@ class Semaphore {
 
     public int getCount() {
         return count;
+    }
+}
+
+class Pair {
+    public Device device;
+    public int connectionNumber;
+
+    public Pair(Device device, int connectionNumber) {
+        this.device = device;
+        this.connectionNumber = connectionNumber;
     }
 }
