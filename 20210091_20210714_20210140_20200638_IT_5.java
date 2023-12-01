@@ -1,35 +1,61 @@
-package assignment;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
 public class Network {
+    private static final StringBuilder outputBuffer = new StringBuilder();
+
     public static void main(String[] args) {
+
         Scanner scanner = new Scanner(System.in);
         System.out.println("What is the number of WI-FI Connections?");
         int maxConnections = scanner.nextInt();
         System.out.println("What is the number of devices Clients want to connect?");
         int totalDevices = scanner.nextInt();
-        Router router = new Router(maxConnections);
+        Router router = new Router(maxConnections, outputBuffer);
 
         // Create a list to store devices
         List<Device> devices = new ArrayList<>();
 
         // Create and start threads for each device
         for (int i = 0; i < totalDevices; i++) {
+            System.out.print("Enter device name and type (e.g., C1 mobile): ");
             String devname = scanner.next();
             String deviceType = scanner.next();
-            System.out.println("Name: " + devname + " Type: " + deviceType);
-            Device device = new Device(devname, deviceType, router);
+            System.out.println("Name : " + devname + " type: " + deviceType);
+            Device device = new Device(devname, deviceType, router, outputBuffer);
             devices.add(device);
         }
 
         // Start threads for each device
+        List<Thread> threads = new ArrayList<>();
         for (Device device : devices) {
             Thread thread = new Thread(device);
+            threads.add(thread);
             thread.start();
         }
+
+        // Wait for all threads to finish
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Write the accumulated output to a file
+        try (FileWriter fileWriter = new FileWriter("output.txt")) {
+            fileWriter.write(outputBuffer.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Output written to the file: output.txt");
     }
 }
 
@@ -37,20 +63,13 @@ class Device extends Thread {
     private String name;
     private String type;
     private Router myRouter;
+    private StringBuilder outputBuffer;
 
-    public Device(String name, String type, Router router) {
+    public Device(String name, String type, Router router, StringBuilder outputBuffer) {
         this.name = name;
         this.type = type;
         this.myRouter = router;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    @Override
-    public String toString() {
-        return "(" + name + ") " + "(" + type + ") ";
+        this.outputBuffer = outputBuffer;
     }
 
     @Override
@@ -66,20 +85,20 @@ class Device extends Thread {
 
     public void connect() throws InterruptedException {
         myRouter.occupy(this);
-        System.out.println("Connection " + myRouter.getConnectionNumber(this) + ": " + this.name + " login.");
+        outputBuffer.append(this.name).append(" login.\n");
     }
 
     public void performOnlineActivity() throws InterruptedException {
-        System.out.println("Connection " + myRouter.getConnectionNumber(this) + ": " + this.name + " performs online activity.");
+        outputBuffer.append(this.name).append(" performs online activity.\n");
         // Simulate online activity
         Thread.sleep(new Random().nextInt(2000) + 1000);
     }
 
     public void disconnect() {
-        System.out.println("Connection " + myRouter.getConnectionNumber(this) + ": " + this.name + " logged out.");
+        outputBuffer.append(this.name).append(" logged out.\n");
         myRouter.release(this);
     }
-
+    
     public String getDeviceType() {
         return type;
     }
@@ -90,64 +109,38 @@ class Device extends Thread {
 }
 
 class Router {
-    private List<Pair> connections;
+    private List<Device> connections;
     private Semaphore mySemaphore;
-    private int maxConnections;
+    private StringBuilder outputBuffer;
 
-    public Router(int maxConnections) { // constructor function
+    public Router(int nOfConnections, StringBuilder outputBuffer) {
         connections = new ArrayList<>();
-        this.maxConnections = maxConnections;
-        mySemaphore = new Semaphore(maxConnections);
+        mySemaphore = new Semaphore(nOfConnections);
+        this.outputBuffer = outputBuffer;
     }
 
     public void occupy(Device device) throws InterruptedException {
         synchronized (this) {
-        	if(connections.size()< maxConnections) {
-                System.out.println(device.toString() + "arrived");
-        	}
-            while (connections.size() >= maxConnections) {
-                System.out.println(device.getDeviceName() + " (" + device.getDeviceType() + ") arrived and waiting");
+            while (connections.size() >= mySemaphore.getCount()) {
+                outputBuffer.append(device.getDeviceName()).append(" (")
+                        .append(device.getDeviceType()).append(") arrived and waiting\n");
                 wait(); // Wait until a connection is released
             }
 
-            int connectionNumber = getNextConnectionNumber();
-            connections.add(new Pair(device, connectionNumber));
-            System.out.println("Connection " + connectionNumber + ": " + device.getDeviceName() + " (" + device.getDeviceType() + ") Occupied");
+            connections.add(device);
+            outputBuffer.append(device.getDeviceName()).append(" (")
+            .append(device.getDeviceType()).append(") arrived\n");
+            outputBuffer.append("- Connection ").append(device.getDeviceName())
+                    .append(" (").append(device.getDeviceType()).append(") Occupied\n");
         }
     }
 
     public void release(Device device) {
         synchronized (this) {
-            int connectionNumber = getConnectionNumber(device);
-            connections.removeIf(pair -> pair.device == device);
+            connections.remove(device);
             mySemaphore.sem_signal();
             notify(); // Notify waiting threads that a connection is available
         }
-    }
-
-    private int getNextConnectionNumber() {
-        int nextConnectionNumber = 1;
-        for (Pair pair : connections) {
-            if (pair.connectionNumber == nextConnectionNumber) {
-                nextConnectionNumber++;
-            } else {
-                break;
-            }
-        }
-        return nextConnectionNumber;
-    }
-
-    public int getConnectionNumber(Device device) {
-        for (Pair pair : connections) {
-            if (pair.device == device) {
-                return pair.connectionNumber;
-            }
-        }
-        return -1; // Device not found
-    }
-
-    public List<Pair> getConnections() {
-        return connections;
     }
 }
 
@@ -173,15 +166,5 @@ class Semaphore {
 
     public int getCount() {
         return count;
-    }
-}
-
-class Pair {
-    public Device device;
-    public int connectionNumber;
-
-    public Pair(Device device, int connectionNumber) {
-        this.device = device;
-        this.connectionNumber = connectionNumber;
     }
 }
