@@ -1,4 +1,4 @@
-package assignment;
+package Semaphores;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -59,7 +59,8 @@ class Device extends Thread {
             connect();
             performOnlineActivity();
             disconnect();
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -107,6 +108,7 @@ class Router {
         	}
             while (connections.size() >= maxConnections) {
                 System.out.println(device.getDeviceName() + " (" + device.getDeviceType() + ") arrived and waiting");
+                mySemaphore.sem_wait();
                 wait(); // Wait until a connection is released
             }
 
@@ -130,7 +132,8 @@ class Router {
         for (Pair pair : connections) {
             if (pair.connectionNumber == nextConnectionNumber) {
                 nextConnectionNumber++;
-            } else {
+            }
+            else {
                 break;
             }
         }
