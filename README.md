@@ -1,11 +1,10 @@
 # OS-Assignment2
 
 ## Authors
-- Roaa Fathi Nada                 20210140
-- Basma Mahmoud Hashem Ali        20210091
-- Selsabeel Asim Ali Elbagir      20210714
-- Yahia Salah                     20200638
-
+- [Roaa Fathi Nada ](https://github.com/rFathi03)                
+- [Basma Mahmoud](https://github.com/Basma2423)        
+- [Selsabeel](https://github.com/SelsabeelA)
+- [Yahia Salah](https://github.com/YahiaSalah11)                  
 ## Description
 The assignment is divided into: 
 - **Router Calss** (10 marks):
@@ -21,7 +20,7 @@ The assignment is divided into:
 
 
 ## Work Distribution
-> Roaa Fathi 
+> Roaa Fathi
 - Device Class.
 > Basma Mahmoud
 - Semaphore Class.
